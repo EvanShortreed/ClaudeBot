@@ -1,0 +1,9 @@
+node_modules/
+dist/
+store/
+workspace/uploads/
+.env
+*.log
+.wwebjs_auth/
+.wwebjs_cache/
+*.pid

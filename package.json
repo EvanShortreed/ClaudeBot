@@ -1,0 +1,40 @@
+{
+  "name": "claudeclaw",
+  "version": "1.0.0",
+  "description": "Personal AI assistant bridging Claude Agent SDK to Telegram",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "setup": "tsx scripts/setup.ts",
+    "status": "tsx scripts/status.ts",
+    "schedule": "tsx src/schedule-cli.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-code": "^1",
+    "better-sqlite3": "^11",
+    "croner": "^9",
+    "elevenlabs": "^1",
+    "grammy": "^1",
+    "@grammyjs/runner": "^2",
+    "@grammyjs/auto-retry": "^2",
+    "@grammyjs/transformer-throttler": "^1",
+    "pino": "^9",
+    "pino-pretty": "^13",
+    "qrcode-terminal": "^0.12",
+    "whatsapp-web.js": "^1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7",
+    "@types/node": "^22",
+    "tsx": "^4",
+    "typescript": "^5",
+    "vitest": "^3"
+  }
+}
