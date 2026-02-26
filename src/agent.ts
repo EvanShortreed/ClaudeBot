@@ -10,39 +10,17 @@ import {
 import { createLogger } from './logger.js';
 import {
   MAX_TURNS,
+  MAX_BUDGET_USD,
   AGENT_TIMEOUT_MS,
   PROJECT_ROOT,
 } from './config.js';
+import { createSecurityPolicy } from './security.js';
 import type { AgentResult, AgentOptions } from './types.js';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const log = createLogger('agent');
-
-// Security: destructive bash patterns to deny
-const DESTRUCTIVE_PATTERNS = [
-  /\brm\s+(-[rRf]+\s+)?\//,
-  /\bmkfs\b/,
-  /\bdd\s+if=/,
-  /\bkill\s+-9\s+1\b/,
-  /\bchmod\s+777\s+\//,
-  />\s*\/dev\/sda/,
-  /\bsudo\s+rm\b/,
-  /:\(\)\{.*:\|:&\s*\};:/,
-  /\bshutdown\b/,
-  /\breboot\b/,
-];
-
-const SYSTEM_WRITE_PATHS = ['/etc/', '/usr/', '/System/', '/Library/', '/bin/', '/sbin/', '/var/'];
-
-const SENSITIVE_FILE_PATTERNS = [
-  /\.env$/,
-  /credentials/i,
-  /\.pem$/,
-  /\.key$/,
-  /id_rsa/,
-  /id_ed25519/,
-];
+const securityPolicy = createSecurityPolicy();
 
 // Load CLAUDE.md append content
 let claudeMdAppend = '';
@@ -80,44 +58,20 @@ export async function runAgent(
           ? `You are ClaudeClaw, a personal AI assistant accessible via Telegram.\n\n${claudeMdAppend}`
           : 'You are ClaudeClaw, a personal AI assistant accessible via Telegram.',
         ...(sessionId ? { resume: sessionId } : {}),
+        maxBudgetUsd: MAX_BUDGET_USD,
         abortController,
         includePartialMessages: true,
         permissionMode: 'default',
-        canUseTool: async (toolName, input, { signal, suggestions }) => {
-          // Check bash commands
-          if (toolName === 'Bash') {
-            const command = String(input.command ?? '');
-            for (const pattern of DESTRUCTIVE_PATTERNS) {
-              if (pattern.test(command)) {
-                log.warn({ toolName, command: command.slice(0, 100) }, 'Destructive command DENIED');
-                return { behavior: 'deny' as const, message: `Blocked: destructive command pattern` };
-              }
-            }
+        canUseTool: async (toolName, input, { suggestions }) => {
+          const decision = securityPolicy.canUseTool(
+            toolName,
+            input as Record<string, unknown>,
+          );
+
+          if (!decision.allowed) {
+            return { behavior: 'deny' as const, message: decision.reason ?? 'Blocked by security policy' };
           }
 
-          // Check file writes
-          if (toolName === 'Write' || toolName === 'Edit') {
-            const filePath = String(input.file_path ?? '');
-            for (const prefix of SYSTEM_WRITE_PATHS) {
-              if (filePath.startsWith(prefix)) {
-                log.warn({ toolName, filePath }, 'System path write DENIED');
-                return { behavior: 'deny' as const, message: `Blocked: write to system path ${prefix}` };
-              }
-            }
-            for (const pattern of SENSITIVE_FILE_PATTERNS) {
-              if (pattern.test(filePath)) {
-                log.warn({ toolName, filePath }, 'Sensitive file write DENIED');
-                return { behavior: 'deny' as const, message: `Blocked: write to sensitive file` };
-              }
-            }
-          }
-
-          // Log web access
-          if (toolName === 'WebFetch' || toolName === 'WebSearch') {
-            log.debug({ toolName, url: input.url ?? input.query }, 'Web access');
-          }
-
-          // Allow everything else
           return {
             behavior: 'allow' as const,
             updatedInput: input,
@@ -162,6 +116,10 @@ export async function runAgent(
           log.info({ costUsd, turns }, 'Agent completed');
         } else if (rMsg.subtype === 'error_max_turns') {
           errors.push('Reached maximum turn limit. Try breaking into smaller tasks.');
+          costUsd = rMsg.total_cost_usd;
+          turns = rMsg.num_turns;
+        } else if (rMsg.subtype === 'error_max_budget_usd') {
+          errors.push(`Budget limit ($${MAX_BUDGET_USD}) reached. Try a simpler prompt.`);
           costUsd = rMsg.total_cost_usd;
           turns = rMsg.num_turns;
         } else if (rMsg.subtype === 'error_during_execution') {

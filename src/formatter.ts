@@ -30,10 +30,10 @@ export function formatForTelegram(text: string): string {
   result = result.replace(/~~(.+?)~~/g, '<s>$1</s>');
   result = result.replace(/__(.+?)__/g, '<u>$1</u>');
 
-  // Links: [text](url) — already escaped, need to unescape the parts
+  // Links: [text](url) — URL was HTML-escaped, unescape & in href
   result = result.replace(
     /\[([^\]]+)\]\(([^)]+)\)/g,
-    '<a href="$2">$1</a>',
+    (_match, text, url) => `<a href="${url.replace(/&amp;/g, '&')}">${text}</a>`,
   );
 
   // Headings → bold

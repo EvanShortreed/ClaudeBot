@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
@@ -46,7 +46,7 @@ check('Bot token', () => {
 check('Database', () => {
   const dbPath = join(ROOT, 'store', 'claudeclaw.db');
   if (existsSync(dbPath)) {
-    const stat = require('node:fs').statSync(dbPath);
+    const stat = statSync(dbPath);
     return `${(stat.size / 1024).toFixed(1)} KB`;
   }
   return 'not created yet (will be created on first run)';

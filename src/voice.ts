@@ -1,5 +1,5 @@
-import { createReadStream, renameSync, existsSync } from 'node:fs';
-import { extname, dirname, join } from 'node:path';
+import { renameSync, existsSync } from 'node:fs';
+import { extname } from 'node:path';
 import { GROQ_API_KEY, ELEVENLABS_API_KEY, ELEVENLABS_VOICE_ID } from './config.js';
 import { createLogger } from './logger.js';
 import type { VoiceCapabilities } from './types.js';
@@ -182,7 +182,3 @@ async function ttsViaHttp(text: string): Promise<Buffer> {
   return Buffer.from(await res.arrayBuffer());
 }
 
-async function readFileAsBuffer(filePath: string): Promise<Buffer> {
-  const { readFile } = await import('node:fs/promises');
-  return readFile(filePath);
-}

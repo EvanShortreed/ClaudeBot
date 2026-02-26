@@ -35,6 +35,9 @@ export const ELEVENLABS_VOICE_ID = env.ELEVENLABS_VOICE_ID ?? 'pNInz6obpgDQGcFma
 // WhatsApp
 export const WHATSAPP_ENABLED = env.WHATSAPP_ENABLED === 'true';
 
+// Scheduling
+export const DEFAULT_TIMEZONE = env.DEFAULT_TIMEZONE ?? 'America/Chicago';
+
 // Database
 export const DB_PATH = join(STORE_DIR, 'claudeclaw.db');
 

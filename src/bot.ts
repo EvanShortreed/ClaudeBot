@@ -8,6 +8,7 @@ import {
   ALLOWED_CHAT_IDS,
   TYPING_REFRESH_MS,
   STREAM_EDIT_INTERVAL_MS,
+  DEFAULT_TIMEZONE,
 } from './config.js';
 import { runAgent } from './agent.js';
 import { buildMemoryContext, saveConversationTurn } from './memory.js';
@@ -273,7 +274,7 @@ export function createBot(): Bot {
     const prompt = parts.slice(5).join(' ');
 
     try {
-      const id = createTask(chatId, prompt, cronExpr, 'America/Chicago');
+      const id = createTask(chatId, prompt, cronExpr, DEFAULT_TIMEZONE);
       await ctx.reply(`Scheduled task #${id} created.\nCron: <code>${cronExpr}</code>\nPrompt: ${prompt}`, {
         parse_mode: 'HTML',
       });
