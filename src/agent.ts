@@ -6,7 +6,7 @@ import {
   type SDKResultMessage,
   type SDKPartialAssistantMessage,
   type PermissionResult,
-} from '@anthropic-ai/claude-code';
+} from '@anthropic-ai/claude-agent-sdk';
 import { createLogger } from './logger.js';
 import {
   MAX_TURNS,
@@ -54,8 +54,12 @@ export async function runAgent(
       prompt: message,
       options: {
         maxTurns: MAX_TURNS,
-        appendSystemPrompt: claudeMdAppend
-          ? `You are ClaudeClaw, a personal AI assistant accessible via Telegram.\n\n${claudeMdAppend}`
+        systemPrompt: claudeMdAppend
+          ? {
+              type: 'preset' as const,
+              preset: 'claude_code' as const,
+              append: `You are ClaudeClaw, a personal AI assistant accessible via Telegram.\n\n${claudeMdAppend}`,
+            }
           : 'You are ClaudeClaw, a personal AI assistant accessible via Telegram.',
         ...(sessionId ? { resume: sessionId } : {}),
         maxBudgetUsd: MAX_BUDGET_USD,
